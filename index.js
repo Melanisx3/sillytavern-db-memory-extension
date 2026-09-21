@@ -3,8 +3,10 @@
  * Database-backed memory with PostgreSQL + pgvector backend
  */
 
-import { renderExtensionTemplateAsync, getContext, extension_settings } from '/scripts/extensions.js';
-import { eventSource, event_types, saveSettingsDebounced } from '/script.js';
+import { renderExtensionTemplateAsync, extension_settings, saveSettingsDebounced } from '../../../../script.js';
+import { eventSource, event_types } from '../../../../script.js';
+import { getContext } from '../../../../scripts/st-context.js';
+import { toastr } from '../../../../lib.js';
 
 const EXTENSION_NAME = 'db_memory';
 const EXTENSION_FOLDER = 'third-party/sillytavern-db-memory-extension';
@@ -29,35 +31,25 @@ const state = {
     },
     lastSyncedMessageId: null,
     processedMessages: new Set(),
-    syncQueue: [],
-    syncInProgress: false,
     currentPage: 1,
     pageSize: 20
 };
 
 // Initialize extension settings
-if (!extension_settings.db_memory) {
-    extension_settings.db_memory = {
+if (!extension_settings[EXTENSION_NAME]) {
+    extension_settings[EXTENSION_NAME] = {
         backendUrl: '',
         username: '',
         password: '',
         jwtToken: null,
         tokenExpiry: null,
-        settings: {
-            autoSync: true,
-            messagesPerSync: 10,
-            memoriesPerContext: 5,
-            similarityThreshold: 0.7,
-            enableAutoExtraction: true,
-            showRelevanceScores: true,
-            debugMode: false
-        }
+        settings: { ...state.settings }
     };
 }
 
 // Load state from extension_settings
 function loadState() {
-    const saved = extension_settings.db_memory;
+    const saved = extension_settings[EXTENSION_NAME];
     state.backendUrl = saved.backendUrl || '';
     state.username = saved.username || '';
     state.password = saved.password || '';
@@ -70,12 +62,12 @@ function loadState() {
 
 // Save state to extension_settings
 function saveState() {
-    extension_settings.db_memory.backendUrl = state.backendUrl;
-    extension_settings.db_memory.username = state.username;
-    extension_settings.db_memory.password = state.password;
-    extension_settings.db_memory.jwtToken = state.jwtToken;
-    extension_settings.db_memory.tokenExpiry = state.tokenExpiry;
-    extension_settings.db_memory.settings = { ...state.settings };
+    extension_settings[EXTENSION_NAME].backendUrl = state.backendUrl;
+    extension_settings[EXTENSION_NAME].username = state.username;
+    extension_settings[EXTENSION_NAME].password = state.password;
+    extension_settings[EXTENSION_NAME].jwtToken = state.jwtToken;
+    extension_settings[EXTENSION_NAME].tokenExpiry = state.tokenExpiry;
+    extension_settings[EXTENSION_NAME].settings = { ...state.settings };
     saveSettingsDebounced();
 }
 
@@ -145,7 +137,7 @@ async function reLogin() {
             saveState();
         }
     } catch (e) {
-        console.error('[DB Memory] Re-login failed:', e);
+        if (state.settings.debugMode) console.error('[DB Memory] Re-login failed:', e);
         state.connected = false;
         updateConnectionStatus();
         throw e;
@@ -155,7 +147,7 @@ async function reLogin() {
 async function login() {
     if (state.jwtToken && !isTokenExpired()) {
         try {
-            await request('/api/auth/test-token', { method: 'POST' });
+            await request('/health', { method: 'GET' });
             state.connected = true;
             updateConnectionStatus();
             return true;
@@ -181,32 +173,6 @@ async function testConnection() {
     return true;
 }
 
-// Messages API
-const MessagesAPI = {
-    async create(chatId, role, content) {
-        return request('/api/messages', {
-            method: 'POST',
-            body: JSON.stringify({ chatId, role, content })
-        });
-    },
-    async list(chatId) {
-        const params = chatId ? `?chatId=${encodeURIComponent(chatId)}` : '';
-        return request(`/api/messages${params}`, { method: 'GET' });
-    },
-    async getById(id) {
-        return request(`/api/messages/${id}`, { method: 'GET' });
-    },
-    async update(id, { content, role }) {
-        return request(`/api/messages/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ content, role })
-        });
-    },
-    async delete(id) {
-        return request(`/api/messages/${id}`, { method: 'DELETE' });
-    }
-};
-
 // Memories API
 const MemoriesAPI = {
     async list(filters = {}) {
@@ -220,15 +186,6 @@ const MemoriesAPI = {
         const qs = p.toString();
         return request(`/api/memories${qs ? '?' + qs : ''}`, { method: 'GET' });
     },
-    async getById(id) {
-        return request(`/api/memories/${id}`, { method: 'GET' });
-    },
-    async create(body) {
-        return request('/api/memories', {
-            method: 'POST',
-            body: JSON.stringify(body)
-        });
-    },
     async process(content, opts = {}) {
         return request('/api/memories/process', {
             method: 'POST',
@@ -239,12 +196,6 @@ const MemoriesAPI = {
                 characterId: opts.characterId || null,
                 sourceMessageId: opts.sourceMessageId || null
             })
-        });
-    },
-    async update(id, body) {
-        return request(`/api/memories/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(body)
         });
     },
     async delete(id) {
@@ -273,26 +224,26 @@ const ContextAPI = {
 
 // UI Functions
 function updateConnectionStatus() {
-    const el = $('#db_memory_connection_status');
+    const el = $('#db_memory_status_badge');
     if (!el.length) return;
 
-    el.removeClass('connected disconnected');
     if (state.connected && state.jwtToken) {
-        el.addClass('connected');
-        el.find('.status-text').text('Connected');
+        el.text('Connected').css({ background: '#4caf50', color: '#fff' });
     } else {
-        el.addClass('disconnected');
-        el.find('.status-text').text('Disconnected');
+        el.text('Disconnected').css({ background: '#f44336', color: '#fff' });
     }
 }
 
 function showMessage(msg, type = 'info') {
-    const el = $('#db_memory_connection_message');
-    if (!el.length) return;
+    if (type === 'success') toastr.success(msg, 'DB Memory');
+    else if (type === 'error') toastr.error(msg, 'DB Memory');
+    else toastr.info(msg, 'DB Memory');
     
-    el.removeClass('success error info').addClass(type);
-    el.text(msg).show();
-    setTimeout(() => el.fadeOut(), 3000);
+    const el = $('#db_memory_connection_message');
+    if (el.length) {
+        el.text(msg).css('color', type === 'error' ? '#f44336' : type === 'success' ? '#4caf50' : '#2196f3').show();
+        setTimeout(() => el.fadeOut(), 3000);
+    }
 }
 
 function escapeHtml(text) {
@@ -304,7 +255,7 @@ function escapeHtml(text) {
 // Memory List
 async function loadMemories(filters = {}) {
     if (!state.connected) {
-        $('#db_memory_list').html('<div class="empty-state">Not connected to backend</div>');
+        $('#db_memory_list').html('<div class="empty-state" style="padding:10px;opacity:0.6;">Not connected to backend</div>');
         return;
     }
 
@@ -317,7 +268,7 @@ async function loadMemories(filters = {}) {
         renderMemoryList(data.memories || []);
         updatePagination();
     } catch (e) {
-        $('#db_memory_list').html(`<div class="error-state">Failed to load: ${escapeHtml(e.message)}</div>`);
+        $('#db_memory_list').html(`<div class="error-state" style="padding:10px;color:#f44336;">Failed to load: ${escapeHtml(e.message)}</div>`);
     }
 }
 
@@ -326,29 +277,22 @@ function renderMemoryList(memories) {
     if (!container.length) return;
 
     if (memories.length === 0) {
-        container.html('<div class="empty-state">No memories found</div>');
+        container.html('<div class="empty-state" style="padding:10px;opacity:0.6;">No memories found</div>');
         return;
     }
 
     const html = memories.map(m => {
         const dateStr = m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '-';
-        const impClass = `importance-${m.importance || 'normal'}`;
         return `
-            <div class="memory-item ${impClass}" data-memory-id="${m.id}">
-                <div class="memory-header">
-                    <span class="memory-type">${m.type || 'memory'}</span>
-                    <span class="memory-importance">${m.importance || '-'}</span>
-                    ${state.settings.showRelevanceScores && m.confidence != null
-                ? `<span class="relevance-score">${(m.confidence * 100).toFixed(1)}%</span>`
-                : ''}
+            <div class="memory-item" style="padding:8px;margin-bottom:5px;border:1px solid var(--SmartThemeBorderColor);border-radius:5px;background:var(--SmartThemeInputBackground);">
+                <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                    <span style="font-size:0.8em;padding:2px 6px;border-radius:10px;background:var(--SmartThemeAccent);color:var(--SmartThemeButtonText);">${m.type || 'memory'}</span>
+                    <span style="font-size:0.8em;opacity:0.7;">${m.importance || '-'}</span>
                 </div>
-                <div class="memory-content">${escapeHtml(m.content || '')}</div>
-                <div class="memory-meta">
+                <div style="margin-bottom:5px;line-height:1.4;">${escapeHtml(m.content || '')}</div>
+                <div style="display:flex;justify-content:space-between;font-size:0.8em;opacity:0.6;">
                     <span>${dateStr}</span>
-                    ${m.characterId ? `<span>${escapeHtml(m.characterId)}</span>` : ''}
-                </div>
-                <div class="memory-actions">
-                    <button class="menu_button delete-memory-btn" data-id="${m.id}">Delete</button>
+                    <input type="button" class="menu_button delete-memory-btn" data-id="${m.id}" value="Delete" style="padding:2px 8px;font-size:0.9em;">
                 </div>
             </div>
         `;
@@ -364,7 +308,7 @@ function updatePagination() {
 // Context List
 async function loadContext() {
     if (!state.connected) {
-        $('#db_memory_context_list').html('<div class="empty-state">Not connected to backend</div>');
+        $('#db_memory_context_list').html('<div class="empty-state" style="padding:10px;opacity:0.6;">Not connected to backend</div>');
         return;
     }
 
@@ -373,13 +317,13 @@ async function loadContext() {
     const characterId = context.characterId;
 
     if (!chatId) {
-        $('#db_memory_context_list').html('<div class="empty-state">No active chat selected</div>');
+        $('#db_memory_context_list').html('<div class="empty-state" style="padding:10px;opacity:0.6;">No active chat selected</div>');
         return;
     }
 
     const chat = context.chat;
     if (!chat || !chat.length) {
-        $('#db_memory_context_list').html('<div class="empty-state">No messages yet</div>');
+        $('#db_memory_context_list').html('<div class="empty-state" style="padding:10px;opacity:0.6;">No messages yet</div>');
         return;
     }
 
@@ -393,98 +337,36 @@ async function loadContext() {
             memoryLimit: state.settings.memoriesPerContext,
             similarityThreshold: state.settings.similarityThreshold
         });
-        renderContextList(data.entries || [], data.recentMessages || []);
+        renderContextList(data.entries || []);
     } catch (e) {
-        $('#db_memory_context_list').html(`<div class="error-state">Failed to load context: ${escapeHtml(e.message)}</div>`);
+        $('#db_memory_context_list').html(`<div class="error-state" style="padding:10px;color:#f44336;">Failed: ${escapeHtml(e.message)}</div>`);
     }
 }
 
-function renderContextList(entries, recentMessages) {
+function renderContextList(entries) {
     const container = $('#db_memory_context_list');
     if (!container.length) return;
 
     if (!entries || entries.length === 0) {
-        container.html('<div class="empty-state">No relevant memories found</div>');
+        container.html('<div class="empty-state" style="padding:10px;opacity:0.6;">No relevant memories found</div>');
         return;
     }
 
-    const totalScore = entries.reduce((s, e) => s + (e.score || 0), 0);
-    const avgScore = entries.length > 0 ? totalScore / entries.length : 0;
-
-    let html = `
-        <div class="context-stats">
-            <span class="stat-item"><span class="stat-label">Memories</span><span class="stat-value">${entries.length}</span></span>
-            <span class="stat-item"><span class="stat-label">Avg Score</span><span class="stat-value">${(avgScore * 100).toFixed(1)}%</span></span>
-        </div>
-    `;
-
-    html += entries.map(e => `
-        <div class="context-item importance-${e.importance || 'normal'}" data-memory-id="${e.id}">
-            <div class="context-header">
-                <span class="context-type">${e.type || 'memory'}</span>
-                ${state.settings.showRelevanceScores ? `<span class="relevance-badge">${(e.score * 100).toFixed(1)}%</span>` : ''}
+    const html = entries.map(e => `
+        <div class="context-item" style="padding:8px;margin-bottom:5px;border:1px solid var(--SmartThemeBorderColor);border-radius:5px;background:var(--SmartThemeInputBackground);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                <span style="font-size:0.8em;padding:2px 6px;border-radius:10px;background:var(--SmartThemeAccent);color:var(--SmartThemeButtonText);">${e.type || 'memory'}</span>
+                ${state.settings.showRelevanceScores ? `<span style="font-size:0.8em;opacity:0.7;">${(e.score * 100).toFixed(1)}%</span>` : ''}
             </div>
-            <div class="context-content">${escapeHtml(e.content || '')}</div>
-            <div class="context-footer">
-                <span>Importance: ${e.importance || '-'}</span>
-                <span>Type: ${e.type || '-'}</span>
-            </div>
+            <div style="margin-bottom:5px;line-height:1.4;">${escapeHtml(e.content || '')}</div>
         </div>
     `).join('');
 
     container.html(html);
 }
 
-// Chat Integration
-async function handleNewMessage(messageId) {
-    if (!state.connected) return;
-    if (state.processedMessages.has(messageId)) return;
-    if (!state.settings.autoSync) return;
-
-    state.processedMessages.add(messageId);
-    saveState();
-
-    const context = getContext();
-    const chat = context.chat || [];
-    const msg = chat.find(m => m.swipe_id == messageId || m.id == messageId);
-    if (!msg) return;
-
-    const role = msg.is_user ? 'user' : 'assistant';
-    const content = msg.mes || msg.message || '';
-    if (!content.trim()) return;
-
-    try {
-        const chatId = context.chatId;
-        await MessagesAPI.create(chatId, role, content);
-
-        if (state.settings.enableAutoExtraction) {
-            try {
-                await MemoriesAPI.process(content, {
-                    chatId,
-                    role,
-                    characterId: context.characterId
-                });
-            } catch { }
-        }
-    } catch (e) {
-        console.error('[DB Memory] Sync failed:', e);
-    }
-}
-
 // Event Handlers
 function bindEventHandlers() {
-    // Tabs
-    $(document).on('click', '.tab-button', function () {
-        const tab = $(this).data('tab');
-        $('.tab-button').removeClass('active');
-        $('.tab-content').removeClass('active');
-        $(this).addClass('active');
-        $(`#tab-${tab}`).addClass('active');
-
-        if (tab === 'memory') loadMemories();
-        if (tab === 'context') loadContext();
-    });
-
     // Connection
     $('#db_memory_connect_btn').on('click', async function () {
         const url = $('#db_memory_backend_url').val().trim();
@@ -515,28 +397,6 @@ function bindEventHandlers() {
         showMessage('Disconnected', 'info');
     });
 
-    $('#db_memory_test_btn').on('click', async function () {
-        const url = $('#db_memory_backend_url').val().trim();
-        const user = $('#db_memory_username').val().trim();
-        const pass = $('#db_memory_password').val();
-
-        if (!url || !user || !pass) {
-            showMessage('Please fill all fields', 'error');
-            return;
-        }
-
-        showMessage('Testing...', 'info');
-        try {
-            state.backendUrl = url;
-            state.username = user;
-            state.password = pass;
-            await testConnection();
-            showMessage('✓ Backend reachable!', 'success');
-        } catch (e) {
-            showMessage(`✗ ${e.message}`, 'error');
-        }
-    });
-
     // Memory
     $('#db_memory_refresh_btn').on('click', function () {
         state.currentPage = 1;
@@ -547,11 +407,6 @@ function bindEventHandlers() {
         state.currentPage = 1;
         const q = $('#db_memory_search_input').val().trim();
         loadMemories(q ? { search: q } : {});
-    });
-
-    $('#db_memory_filter_type, #db_memory_sort_by').on('change', function () {
-        state.currentPage = 1;
-        loadMemories();
     });
 
     $('#db_memory_prev_page').on('click', function () {
@@ -615,10 +470,6 @@ function bindEventHandlers() {
         saveState();
         showMessage('Settings reset', 'info');
     });
-
-    // SillyTavern events
-    eventSource.on(event_types.MESSAGE_RECEIVED, handleNewMessage);
-    eventSource.on(event_types.MESSAGE_SENT, handleNewMessage);
 }
 
 function populateSettings() {
@@ -637,11 +488,11 @@ function populateSettings() {
 
 // Init
 async function init() {
-    console.log('[DB Memory] Initializing...');
+    if (state.settings.debugMode) console.log('[DB Memory] Initializing...');
     
     loadState();
     
-    // Load template
+    // Load template into SillyTavern's extension settings container
     const html = await renderExtensionTemplateAsync(TEMPLATE_PATH, 'drawer');
     $('#extensions_settings2').append(html);
     
@@ -660,13 +511,13 @@ async function init() {
                 await reLogin();
             }
         } catch (e) {
-            console.warn('[DB Memory] Auto-connect failed:', e.message);
+            if (state.settings.debugMode) console.warn('[DB Memory] Auto-connect failed:', e.message);
         }
     }
     
     updateConnectionStatus();
     
-    console.log('[DB Memory] Initialized');
+    if (state.settings.debugMode) console.log('[DB Memory] Initialized');
 }
 
 jQuery(() => {
