@@ -17,22 +17,6 @@ Database-backed memory extension for SillyTavern with PostgreSQL + pgvector back
 - Backend API running (see [sillytavern-memory-backend](https://github.com/yourusername/sillytavern-memory-backend))
 - PostgreSQL 16+ with pgvector extension
 
-## Installation
-
-### From Git URL (Recommended)
-
-1. Open SillyTavern → Extensions panel (puzzle icon)
-2. Click **Install Extension**
-3. Paste this repository URL: `https://github.com/YOUR_USERNAME/sillytavern-db-memory-extension.git`
-4. Click **Install**
-5. Refresh the page
-
-### Manual Installation
-
-1. Download/clone this repository
-2. Copy the folder to `SillyTavern/public/scripts/extensions/sillytavern-db-memory-extension/`
-3. Refresh SillyTavern
-4. Enable the extension in Extensions panel
 
 ## Mobile Support
 
