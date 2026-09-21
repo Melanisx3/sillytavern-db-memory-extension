@@ -1,0 +1,128 @@
+<div id="db_memory_drawer" class="drawer flex-container flexFlexColumn">
+    <div class="drawer-title">
+        <div class="flex-container alignitemscenter spaceBetween">
+            <div class="flex-container alignitemscenter">
+                <span class="fa-solid fa-database"></span>
+                <span class="drawer-header-text">DB Memory Extension</span>
+            </div>
+            <div class="flex-container alignitemscenter">
+                <span id="db_memory_connection_status" class="status-indicator disconnected">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Disconnected</span>
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="drawer-content flex-container flexFlexColumn">
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab-button active" data-tab="connection">Connection</div>
+            <div class="tab-button" data-tab="memory">Memory</div>
+            <div class="tab-button" data-tab="context">Context</div>
+            <div class="tab-button" data-tab="settings">Settings</div>
+        </div>
+        
+        <!-- Connection Tab -->
+        <div class="tab-content active" id="tab-connection">
+            <div class="form-group">
+                <label>Backend URL:</label>
+                <input type="text" id="db_memory_backend_url" placeholder="http://localhost:3000" class="text_pole">
+            </div>
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="db_memory_username" placeholder="Username" class="text_pole">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="db_memory_password" placeholder="Password" class="text_pole">
+            </div>
+            <div class="flex-container">
+                <button id="db_memory_connect_btn" class="menu_button">Connect</button>
+                <button id="db_memory_disconnect_btn" class="menu_button">Disconnect</button>
+                <button id="db_memory_test_btn" class="menu_button">Test Connection</button>
+            </div>
+            <div id="db_memory_connection_message" class="message-box"></div>
+        </div>
+        
+        <!-- Memory Tab -->
+        <div class="tab-content" id="tab-memory">
+            <div class="flex-container">
+                <input type="text" id="db_memory_search_input" placeholder="Search memories..." class="text_pole flex1">
+                <button id="db_memory_search_btn" class="menu_button">Search</button>
+                <button id="db_memory_refresh_btn" class="menu_button">Refresh</button>
+            </div>
+            <div class="flex-container">
+                <select id="db_memory_filter_type" class="text_pole">
+                    <option value="">All Types</option>
+                    <option value="preference">Preference</option>
+                    <option value="fact">Fact</option>
+                    <option value="event">Event</option>
+                </select>
+                <select id="db_memory_sort_by" class="text_pole">
+                    <option value="created_at">Date</option>
+                    <option value="importance">Importance</option>
+                    <option value="type">Type</option>
+                </select>
+            </div>
+            <div id="db_memory_list" class="memory-list"></div>
+            <div class="flex-container pagination">
+                <button id="db_memory_prev_page" class="menu_button">Previous</button>
+                <span id="db_memory_page_info">Page 1</span>
+                <button id="db_memory_next_page" class="menu_button">Next</button>
+            </div>
+        </div>
+        
+        <!-- Context Tab -->
+        <div class="tab-content" id="tab-context">
+            <div class="flex-container">
+                <button id="db_memory_refresh_context_btn" class="menu_button">Refresh Context</button>
+            </div>
+            <div id="db_memory_context_list" class="context-list"></div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div class="tab-content" id="tab-settings">
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="db_memory_auto_sync">
+                    Auto-sync messages
+                </label>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="db_memory_auto_extraction">
+                    Auto-extract memories
+                </label>
+            </div>
+            <div class="form-group">
+                <label>Messages per sync:</label>
+                <input type="number" id="db_memory_messages_per_sync" min="1" max="100" class="text_pole">
+            </div>
+            <div class="form-group">
+                <label>Memories per context:</label>
+                <input type="number" id="db_memory_memories_per_context" min="1" max="50" class="text_pole">
+            </div>
+            <div class="form-group">
+                <label>Similarity threshold: <span id="db_memory_threshold_value">0.70</span></label>
+                <input type="range" id="db_memory_similarity_threshold" min="0" max="1" step="0.01" class="range-slider">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="db_memory_show_scores">
+                    Show relevance scores
+                </label>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="db_memory_debug_mode">
+                    Debug mode
+                </label>
+            </div>
+            <div class="flex-container">
+                <button id="db_memory_save_settings_btn" class="menu_button">Save Settings</button>
+                <button id="db_memory_reset_settings_btn" class="menu_button">Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+</div>
