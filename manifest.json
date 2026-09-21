@@ -1,0 +1,28 @@
+{
+  "name": "SillyTavern DB/Memory Extension",
+  "version": "1.0.0",
+  "author": "User",
+  "description": "Database-backed memory extension with backend API integration for persistent vector memory storage",
+  "main": "index.js",
+  "api_version": "1.0",
+  "permissions": [
+    "chat",
+    "characters",
+    "settings",
+    "extensions"
+  ],
+  "settings": {
+    "backendUrl": "",
+    "username": "",
+    "password": "",
+    "autoSync": true,
+    "messagesPerSync": 10,
+    "memoriesPerContext": 5,
+    "similarityThreshold": 0.7,
+    "enableAutoExtraction": true
+  },
+  "ui": {
+    "tab_title": "DB Memory",
+    "icon": "database"
+  }
+}
