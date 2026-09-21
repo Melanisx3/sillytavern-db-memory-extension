@@ -488,22 +488,38 @@ function populateSettings() {
 
 // Init
 async function init() {
-    if (state.settings.debugMode) console.log('[DB Memory] Initializing...');
+    console.log('[DB Memory] Initializing...');
     
     loadState();
     
     // Load template into SillyTavern's extension settings container
+    console.log('[DB Memory] Loading template...');
     const html = await renderExtensionTemplateAsync(TEMPLATE_PATH, 'drawer');
-    $('#extensions_settings2').append(html);
+    console.log('[DB Memory] Template loaded, length:', html.length);
+    
+    // Check if container exists
+    const container = $('#extensions_settings2');
+    console.log('[DB Memory] Container found:', container.length > 0);
+    
+    if (container.length > 0) {
+        container.append(html);
+        console.log('[DB Memory] HTML appended');
+    } else {
+        console.error('[DB Memory] Container not found!');
+        return;
+    }
     
     // Populate settings
+    console.log('[DB Memory] Populating settings...');
     populateSettings();
     
     // Bind events
+    console.log('[DB Memory] Binding events...');
     bindEventHandlers();
     
     // Auto-connect if we have credentials
     if (state.backendUrl && state.username && state.password) {
+        console.log('[DB Memory] Auto-connecting...');
         try {
             if (state.jwtToken && !isTokenExpired()) {
                 await login();
@@ -511,13 +527,12 @@ async function init() {
                 await reLogin();
             }
         } catch (e) {
-            if (state.settings.debugMode) console.warn('[DB Memory] Auto-connect failed:', e.message);
+            console.warn('[DB Memory] Auto-connect failed:', e.message);
         }
     }
     
     updateConnectionStatus();
-    
-    if (state.settings.debugMode) console.log('[DB Memory] Initialized');
+    console.log('[DB Memory] Initialization complete');
 }
 
 jQuery(() => {
