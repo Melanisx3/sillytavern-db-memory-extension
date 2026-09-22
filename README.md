@@ -56,7 +56,7 @@ Get-NetIPAddress -AddressFamily IPv4 | Select-Object IPAddress, InterfaceAlias
 ```
 
 **Искать активные (НЕ WSL/Hyper-V):**
-- ✅ `10.134.209.9` или `192.168.x.x`
+- ✅ `10.134.ххх.х` или `192.168.x.x`
 - ❌ Избегать: `172.22.208.1`, `172.27.112.1`
 
 ### 3. Установить расширение
@@ -70,7 +70,7 @@ Get-NetIPAddress -AddressFamily IPv4 | Select-Object IPAddress, InterfaceAlias
 
 1. Откройте **Extensions → DB Memory Extension**
 2. Введите:
-   - **Backend URL:** `http://10.134.209.9:3000` (ваш IP)
+   - **Backend URL:** `http://10.х.х:3000` (ваш IP)
    - **Username:** `test_user`
    - **Password:** `testpass123`
 3. Нажмите **Test** → должно быть ✅ OK
