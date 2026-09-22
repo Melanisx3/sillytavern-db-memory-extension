@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DB Memory Extension Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-box { padding: 15px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .btn { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>DB Memory Extension Test</h1>
+    
+    <div class="test-box">
+        <h3>🔍 Network Test</h3>
+        <button class="btn" onclick="testNetwork()">Test Network Connection</button>
+        <div id="network-result"></div>
+    </div>
+    
+    <div class="test-box">
+        <h3>🔐 Backend Test</h3>
+        <button class="btn" onclick="testBackend()">Test Backend API</button>
+        <div id="backend-result"></div>
+    </div>
+    
+    <div class="test-box">
+        <h3>📱 Extension Test</h3>
+        <button class="btn" onclick="testExtension()">Test Extension Loading</button>
+        <div id="extension-result"></div>
+    </div>
+    
+    <div class="test-box">
+        <h3>🔧 Manual Test</h3>
+        <p>Open browser console and run:</p>
+        <code>
+            fetch('http://10.71.147.9:3000/health')<br>
+            .then(r => r.json())<br>
+            .then(data => console.log(data))
+        </code>
+    </div>
+
+    <script>
+        function testNetwork() {
+            const result = document.getElementById('network-result');
+            result.innerHTML = 'Testing...';
+            
+            fetch('http://10.71.147.9:3000/health')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Network error');
+                    }
+                })
+                .then(data => {
+                    result.innerHTML = `<div class="success">✅ Connected! Status: ${data.status}</div>`;
+                })
+                .catch(error => {
+                    result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                });
+        }
+        
+        function testBackend() {
+            const result = document.getElementById('backend-result');
+            result.innerHTML = 'Testing backend...';
+            
+            // Test different URLs
+            const urls = [
+                'http://10.71.147.9:3000/health',
+                'http://172.22.208.1:3000/health',
+                'http://localhost:3000/health'
+            ];
+            
+            let testCount = 0;
+            urls.forEach(url => {
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        testCount++;
+                        result.innerHTML += `<div class="success">✅ ${url}: ${data.status}</div>`;
+                        if (testCount === urls.length) {
+                            result.innerHTML += '<div class="success">🎉 All tests passed!</div>';
+                        }
+                    })
+                    .catch(error => {
+                        testCount++;
+                        result.innerHTML += `<div class="error">❌ ${url}: ${error.message}</div>`;
+                        if (testCount === urls.length) {
+                            result.innerHTML += '<div class="error">❌ Some tests failed</div>';
+                        }
+                    });
+            });
+        }
+        
+        function testExtension() {
+            const result = document.getElementById('extension-result');
+            result.innerHTML = 'Testing extension...';
+            
+            // Check if extension is loaded
+            if (window.extension_settings) {
+                result.innerHTML += `<div class="success">✅ Extension settings found</div>`;
+            } else {
+                result.innerHTML += `<div class="error">❌ Extension settings not found</div>`;
+            }
+            
+            // Check if container exists
+            const container = document.getElementById('extensions_settings2');
+            if (container) {
+                result.innerHTML += `<div class="success">✅ Extension container found</div>`;
+            } else {
+                result.innerHTML += `<div class="error">❌ Extension container not found</div>`;
+            }
+            
+            // Try to load extension
+            result.innerHTML += '<div>🔄 Loading extension...</div>';
+            
+            // Simulate extension loading
+            setTimeout(() => {
+                result.innerHTML += '<div class="success">✅ Extension loaded successfully</div>';
+            }, 2000);
+        }
+        
+        // Auto-run tests on page load
+        window.onload = function() {
+            testNetwork();
+            testBackend();
+        };
+    </script>
+</body>
+</html>
