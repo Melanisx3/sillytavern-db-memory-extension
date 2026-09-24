@@ -121,7 +121,7 @@ Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.AddressState -eq 'Prefe
 ```
 
 **Искать адаптер с активной сетью (НЕ WSL/Hyper-V):**
-- Пример: `10.134.209.9` или `192.168.x.x`
+- Пример: `10.134.*` или `192.168.x.x`
 
 **Избегать виртуальных адаптеров:**
 - ❌ 172.22.208.1 (WSL/Docker bridge)
@@ -138,37 +138,6 @@ netsh advfirewall firewall show rule name="SillyTavern Backend 3000"
 ```powershell
 New-NetFirewallRule -DisplayName "SillyTavern Backend 3000" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow -Profile Any
 ```
-
-## 📱 Установка на телефон
-
-### Шаг 1: Удалить старую версию расширения
-
-В SillyTavern:
-1. Extensions → Manage Extensions
-2. Найти "DB Memory Extension"
-3. Delete
-
-### Шаг 2: Очистить данные браузера
-
-**Chrome Mobile:**
-- Настройки → Конфиденциальность и безопасность → Очистить данные сайтов
-- Выбрать SillyTavern сайт
-- Clear all data
-
-**Safari iOS:**
-- Настройки Safari → Очистить историю и данные веб-сайтов
-- Все история
-
-### Шаг 3: Установить новую версию
-
-**В SillyTavern:**
-1. Extensions → Install Extension
-2. URL: `https://github.com/Melanisx3/sillytavern-db-memory-extension`
-3. Нажать Install
-
-### Шаг 4: Перезагрузить SillyTavern
-
-Нажать F5 или перезагрузить вкладку полностью.
 
 ## ⚙️ Настройка расширения
 
@@ -191,20 +160,6 @@ New-NetFirewallRule -DisplayName "SillyTavern Backend 3000" -Direction Inbound -
 ```
 ✅ Backend is healthy
 ```
-
-**Если ошибка:**
-- Проверь что ты вводишь правильный IP
-- Убедись что телефон и ПК в одной Wi-Fi сети
-- Проверь что Docker backend запущен
-
-### Нажатие кнопки "Connect"
-
-**Ожидается:**
-```
-Connected successfully!
-```
-
-Статус станет зеленым вместо красного.
 
 ## 🔧 Настройки авто-синхронизации
 
@@ -325,47 +280,6 @@ Extension только через API, напрямую в PostgreSQL не по�
 
 Все запросы к backend аутентифицируются через JWT токены.
 
-### Graceful Degradation
-
-Если backend недоступен:
-- SillyTavern продолжает работать обычным образом
-- Нет ошибок, просто функция памяти отключена
-- Никаких blocking операций на UI
-
-## 🧪 End-to-End Тест
-
-### Провести полный тест:
-
-**Шаг 1: Войти в систему**
-1. Открыть настройки расширения
-2. Ввести URL, username, password
-3. Нажать Test → ✅ OK
-4. Нажать Connect → ✅ Connected
-
-**Шаг 2: Первое сообщение**
-1. Открой любой чат с персонажем
-2. Напиши: `"Привет, меня зовут Алекс, я люблю читать научную фантастику"`
-3. Подожди отправки сообщения
-4. Нажати Process Last Message
-
-**Шаг 3: Проверить извлечение памяти**
-1. Должно появиться: `Message processed: 2 candidates, 1 created`
-2. Это значит создано новое воспоминание о тебе
-
-**Шаг 4: Сгенерировать ответ**
-1. Отправь любое сообщение
-2. Дождись ответа персонажа
-
-**Шаг 5: Построить контекст**
-1. Нажми Build Context в настройках
-2. Должно показать сколько memories найдено
-3. Если найдено твое воспоминание → ✓ работа
-
-**Шаг 6: Проверить сохранение ответа**
-1. Отправь новое сообщение
-2. Нажати Process Last Message снова
-3. Должна обновиться статистика
-
 ### Успешный результат:
 
 ```
@@ -426,163 +340,6 @@ Extension только через API, напрямую в PostgreSQL не по�
    location.reload()
    ```
 3. Переустанови расширение
-
-## 📊 API Reference
-
-### Backend Endpoints
-
-#### `/health`
-**GET** - Проверка здоровья системы
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "postgres": true,
-  "pgvector": true,
-  "pgvectorVersion": "0.8.6"
-}
-```
-
-#### `/api/auth/login`
-**POST** - Аутентификация
-
-**Request:**
-```json
-{
-  "username": "test_user",
-  "password": "testpass123"
-}
-```
-
-**Response:**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-#### `/api/messages`
-**POST** - Сохранить сообщение
-
-**Request:**
-```json
-{
-  "chatId": "uuid-chat-id",
-  "role": "user",
-  "content": "Привет мир"
-}
-```
-
-#### `/api/memories/process`
-**POST** - Обработать сообщение для извлечения памяти
-
-**Request:**
-```json
-{
-  "content": "Привет, я люблю котиков",
-  "role": "user",
-  "chatId": "uuid-chat-id",
-  "characterId": "optional-character-id",
-  "sourceMessageId": "optional-message-id"
-}
-```
-
-**Response:**
-```json
-{
-  "candidates": [/* ... */],
-  "created": [/* memories created */],
-  "updated": [/* memories updated */]
-}
-```
-
-#### `/api/memories`
-**GET** - Список воспоминаний
-
-**Query params:**
-- `chatId?` - фильтр по чату
-- `characterId?` - фильтр по персонажу
-- `type?` - тип памяти (preference, fact, relationship)
-- `limit?` - лимит записей
-- `offset?` - смещение
-
-#### `/api/context`
-**POST** - Построить контекст из памяти
-
-**Request:**
-```json
-{
-  "query": "Последнее сообщение пользователя",
-  "chatId": "uuid-chat-id",
-  "characterId": "optional-character-id",
-  "memoryLimit": 5,
-  "messageLimit": 10,
-  "similarityThreshold": 0.7
-}
-```
-
-**Response:**
-```json
-{
-  "query": "...",
-  "chatId": "uuid",
-  "characterId": null,
-  "entries": [
-    {
-      "id": "mem-uuid",
-      "content": "Пользователь любит кошек",
-      "type": "preference",
-      "score": 0.85,
-      "importance": 0.9
-    }
-  ],
-  "recentMessages": [...],
-  "contextText": "User likes cats.\nRecent messages: ..."
-}
-```
-
-#### DELETE `/api/memories/:id`
-**DELETE** - Удалить воспоминание
-
-## 📈 Performance Optimizations
-
-### База данных
-
-**Индексы уже созданы:**
-- GIN index на векторах (pgvector)
-- Composite index на (userId, chatId, characterId)
-- Index на importance
-
-### Кэширование
-
-- JWT токен кэшируется в localStorage
-- Настройки кэшируются автоматически
-- Connection state persists между перезагрузками
-
-### Асинхронность
-
-- Все операции async/non-blocking
-- UI не блокируется при работе с базой
-- Processing queue для очереди сообщений
-
-### Graceful degradation
-
-- Если backend недоступен → ничего не ломается
-- Просто память отключена
-- SillyTavern работает штатно
-
-## 🔄 Обновление
-
-### Как обновить:
-
-1. Удалить старое расширение
-2. Установить новую версию по тому же URL
-3. Настройки сохраняются автоматически (localStorage)
-
-### Версии:
-
-- **v1.0.x** - Базовая функциональность
 - **v2.0.0** - Полная интеграция с flow System
 
 ---
