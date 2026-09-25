@@ -81,62 +81,6 @@ Generate embeddings
 Store in PostgreSQL
 ```
 
-## 🔧 Требования к установке
-
-### На ПК (backend сервер):
-
-**Проверить Docker запущен:**
-```bash
-docker ps --format "{{.Names}}: {{.Status}}"
-```
-
-**Должен быть статус Up:**
-```
-sillytavern-memory-backend: Up 6 minutes
-sillytavern-memory-db: Up 6 minutes (healthy)
-```
-
-**Проверить здоровье API:**
-```bash
-curl http://localhost:3000/health
-```
-
-**Ответ должен быть:**
-```json
-{
-  "status": "ok",
-  "postgres": true,
-  "pgvector": true,
-  "pgvectorVersion": "0.8.6",
-  "embeddingProvider": "local-hash-ngram-v1",
-  "embeddingDimensions": 384
-}
-```
-
-### Найти IP адреса сети:
-
-**Windows PowerShell:**
-```powershell
-Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.AddressState -eq 'Preferred' } | Select-Object IPAddress, InterfaceAlias | Format-Table
-```
-
-**Искать адаптер с активной сетью (НЕ WSL/Hyper-V):**
-- Пример: `10.134.*` или `192.168.x.x`
-
-**Избегать виртуальных адаптеров:**
-- ❌ 172.22.208.1 (WSL/Docker bridge)
-- ❌ 172.27.112.1 (Hyper-V)
-
-### Файрвол правила:
-
-**Если не работает подключение с телефона, проверить:**
-```powershell
-netsh advfirewall firewall show rule name="SillyTavern Backend 3000"
-```
-
-**Создать правило если нет:**
-```powershell
-New-NetFirewallRule -DisplayName "SillyTavern Backend 3000" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow -Profile Any
 ```
 
 ## ⚙️ Настройка расширения
@@ -271,14 +215,6 @@ HTTP 401: Unauthorized
 ### Character Isolation ✅
 
 Память может быть ограничена конкретным персонажем (`characterId`).
-
-### No Direct Database Access
-
-Extension только через API, напрямую в PostgreSQL не подключается.
-
-### JWT Authentication
-
-Все запросы к backend аутентифицируются через JWT токены.
 
 ### Успешный результат:
 
