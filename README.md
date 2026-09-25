@@ -66,22 +66,6 @@ sillytavern-db-memory-extension/
 └── LICENSE                 # MIT License
 ```
 
-## 🔒 Безопасность и изоляция
-
-### ✅ Реализовано
-
-- **User Isolation** — каждая память привязана к user_id
-- **Chat Isolation** — фильтры по chatId при запросе
-- **Character Isolation** — фильтры по characterId
-- **JWT Authentication** — все запросы аутентифицируются
-- **No Direct DB Access** — только через API endpoints
-- **Graceful Degradation** — работает без backend
-
-### ⚠️ Нет plaintext паролей
-
-- Пароли хранятся в localStorage encrypted
-- JWT токены expire через 24 часа
-- Automatic re-authentication при истечении срока
 
 ## 🏥 API Reference
 
