@@ -3,10 +3,10 @@
     "loading_order": 100,
     "requires": [],
     "optional": [],
-    "js": "ultra-minimal-index.js",
+    "js": "minimal-index.js",
     "css": "assets/styles/style.css",
     "author": "Melanisx3",
-    "version": "2.1.0-mobile",
+    "version": "2.2.0-mobile",
     "homePage": "https://github.com/Melanisx3/sillytavern-db-memory-extension",
     "auto_update": false
 }

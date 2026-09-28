@@ -1,6 +1,6 @@
 /**
  * DB Memory Extension - Ultra minimal version
- * Mobile-friendly: only essential functionality with eventSource auto-sync
+ * Mobile-friendly: collapsible menu with expanded settings
  */
 
 // Global state for the extension
@@ -11,6 +11,7 @@ const dbMemoryState = {
     password: '',
     jwtToken: null,
     tokenExpiry: null,
+    isExpanded: false,
     settings: {
         autoSync: true,
         messagesPerSync: 10,
@@ -18,7 +19,12 @@ const dbMemoryState = {
         similarityThreshold: 0.7,
         enableAutoExtraction: true,
         showRelevanceScores: true,
-        debugMode: false
+        debugMode: false,
+        maxContextLength: 2000,
+        enableContextBuilding: true,
+        enableMemorySearch: true,
+        enableRealTimeSync: true,
+        syncInterval: 5000
     },
     lastProcessedMessageId: null,
     processingQueue: [],
@@ -203,36 +209,93 @@ function showStatus(message, type = 'info') {
     setTimeout(() => statusEl.fadeOut(), 3000);
 }
 
+// Toggle expanded view
+function toggleExpanded() {
+    dbMemoryState.isExpanded = !dbMemoryState.isExpanded;
+    updateUI();
+}
+
 // Initialize extension UI
 function initializeExtensionUI() {
     const uiHTML = `
         <div id="db_memory_extension_panel" style="padding: 15px;">
-            <h3 style="margin-top: 0;">DB Memory</h3>
+            <h3 style="margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
+                DB Memory
+                <button id="db_memory_toggle_btn" style="background: none; border: none; color: inherit; font-size: 18px; cursor: pointer;">
+                    ${dbMemoryState.isExpanded ? '▲' : '▼'}
+                </button>
+            </h3>
             
-            <div style="margin-bottom: 15px;">
-                <input type="text" id="db_memory_backend_url" placeholder="Backend URL" style="width: 100%; padding: 8px; margin-bottom: 5px;" value="${dbMemoryState.backendUrl}">
-                <input type="text" id="db_memory_username" placeholder="Username" style="width: 100%; padding: 8px; margin-bottom: 5px;" value="${dbMemoryState.username}">
-                <input type="password" id="db_memory_password" placeholder="Password" style="width: 100%; padding: 8px; margin-bottom: 5px;">
+            <div id="db_memory_content" style="${dbMemoryState.isExpanded ? '' : 'display: none;'}">
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="db_memory_backend_url" placeholder="Backend URL" style="width: 100%; padding: 8px; margin-bottom: 5px;" value="${dbMemoryState.backendUrl}">
+                    <input type="text" id="db_memory_username" placeholder="Username" style="width: 100%; padding: 8px; margin-bottom: 5px;" value="${dbMemoryState.username}">
+                    <input type="password" id="db_memory_password" placeholder="Password" style="width: 100%; padding: 8px; margin-bottom: 5px;">
+                    
+                    <button id="db_memory_connect_btn" style="padding: 8px 15px; margin-right: 10px; background: #007bff; color: white; border: none; border-radius: 4px;">Connect</button>
+                    <button id="db_memory_disconnect_btn" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 4px;">Disconnect</button>
+                </div>
                 
-                <button id="db_memory_connect_btn" style="padding: 8px 15px; margin-right: 10px; background: #007bff; color: white; border: none; border-radius: 4px;">Connect</button>
-                <button id="db_memory_disconnect_btn" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 4px;">Disconnect</button>
-            </div>
-            
-            <div id="db_memory_status" style="padding: 8px; margin-bottom: 10px; border-radius: 4px; font-weight: bold;">Disconnected</div>
-            <div id="db_memory_status_msg" style="padding: 8px; border-radius: 4px; display: none;"></div>
-            
-            <div style="margin-bottom: 15px;">
-                <label>
-                    <input type="checkbox" id="db_memory_auto_sync" ${dbMemoryState.settings.autoSync ? 'checked' : ''}> 
-                    Auto-sync messages
-                </label>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label>
-                    <input type="checkbox" id="db_memory_auto_extraction" ${dbMemoryState.settings.enableAutoExtraction ? 'checked' : ''}> 
-                    Auto-extract memories
-                </label>
+                <div id="db_memory_status" style="padding: 8px; margin-bottom: 10px; border-radius: 4px; font-weight: bold;">Disconnected</div>
+                <div id="db_memory_status_msg" style="padding: 8px; border-radius: 4px; display: none;"></div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>
+                        <input type="checkbox" id="db_memory_auto_sync" ${dbMemoryState.settings.autoSync ? 'checked' : ''}> 
+                        Auto-sync messages
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>
+                        <input type="checkbox" id="db_memory_auto_extraction" ${dbMemoryState.settings.enableAutoExtraction ? 'checked' : ''}> 
+                        Auto-extract memories
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>
+                        <input type="checkbox" id="db_memory_context_building" ${dbMemoryState.settings.enableContextBuilding ? 'checked' : ''}> 
+                        Enable context building
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>
+                        <input type="checkbox" id="db_memory_memory_search" ${dbMemoryState.settings.enableMemorySearch ? 'checked' : ''}> 
+                        Enable memory search
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>
+                        <input type="checkbox" id="db_memory_real_time_sync" ${dbMemoryState.settings.enableRealTimeSync ? 'checked' : ''}> 
+                        Real-time sync
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>
+                        <input type="checkbox" id="db_memory_debug_mode" ${dbMemoryState.settings.debugMode ? 'checked' : ''}> 
+                        Debug mode
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Messages per sync:</label>
+                    <input type="number" id="db_memory_messages_per_sync" min="1" max="100" value="${dbMemoryState.settings.messagesPerSync}" style="width: 100%; padding: 8px; margin-bottom: 5px;">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Memories per context:</label>
+                    <input type="number" id="db_memory_memories_per_context" min="1" max="50" value="${dbMemoryState.settings.memoriesPerContext}" style="width: 100%; padding: 8px; margin-bottom: 5px;">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>Similarity threshold:</label>
+                    <input type="range" id="db_memory_similarity_threshold" min="0" max="1" step="0.1" value="${dbMemoryState.settings.similarityThreshold}" style="width: 100%;">
+                    <span id="db_memory_similarity_value">${dbMemoryState.settings.similarityThreshold}</span>
+                </div>
             </div>
         </div>
     `;
@@ -244,6 +307,7 @@ function initializeExtensionUI() {
     populateSettings();
     
     // Bind events
+    $('#db_memory_toggle_btn').on('click', toggleExpanded);
     $('#db_memory_connect_btn').on('click', handleConnect);
     $('#db_memory_disconnect_btn').on('click', handleDisconnect);
     
@@ -258,9 +322,60 @@ function initializeExtensionUI() {
         saveSettings();
     });
     
+    $('#db_memory_context_building').on('change', function() {
+        dbMemoryState.settings.enableContextBuilding = $(this).prop('checked');
+        saveSettings();
+    });
+    
+    $('#db_memory_memory_search').on('change', function() {
+        dbMemoryState.settings.enableMemorySearch = $(this).prop('checked');
+        saveSettings();
+    });
+    
+    $('#db_memory_real_time_sync').on('change', function() {
+        dbMemoryState.settings.enableRealTimeSync = $(this).prop('checked');
+        saveSettings();
+    });
+    
+    $('#db_memory_debug_mode').on('change', function() {
+        dbMemoryState.settings.debugMode = $(this).prop('checked');
+        saveSettings();
+    });
+    
+    $('#db_memory_messages_per_sync').on('change', function() {
+        dbMemoryState.settings.messagesPerSync = parseInt($(this).val());
+        saveSettings();
+    });
+    
+    $('#db_memory_memories_per_context').on('change', function() {
+        dbMemoryState.settings.memoriesPerContext = parseInt($(this).val());
+        saveSettings();
+    });
+    
+    $('#db_memory_similarity_threshold').on('input', function() {
+        const value = parseFloat($(this).val());
+        dbMemoryState.settings.similarityThreshold = value;
+        $('#db_memory_similarity_value').text(value);
+        saveSettings();
+    });
+    
     // Try auto-connect on page load
     if (dbMemoryState.backendUrl && dbMemoryState.username && dbMemoryState.password) {
         setTimeout(() => handleConnect(), 1000);
+    }
+}
+
+// Update UI
+function updateUI() {
+    const content = $('#db_memory_content');
+    const toggleBtn = $('#db_memory_toggle_btn');
+    
+    if (dbMemoryState.isExpanded) {
+        content.show();
+        toggleBtn.text('▲');
+    } else {
+        content.hide();
+        toggleBtn.text('▼');
     }
 }
 
@@ -327,6 +442,9 @@ function hookIntoMessageFlow() {
                 if (dbMemoryState.settings.debugMode) {
                     console.log('[DB Memory] Auto-saved:', { content: content.substring(0, 30), role });
                 }
+                
+                // Process the message
+                await processMessage(content, role);
             } catch (error) {
                 if (dbMemoryState.settings.debugMode) {
                     console.error('[DB Memory] Error:', error);
