@@ -462,26 +462,91 @@ function hookIntoMessageFlow() {
 $(document).ready(function() {
     console.log('[DB Memory Ultra] Initializing...');
     
-    const settingsContainer = $('#extensions_settings2');
-    if (settingsContainer.length > 0) {
+    // Try multiple container selectors
+    const containers = [
+        $('#extensions_settings2'),
+        $('#extensions_settings'),
+        $('#extensions'),
+        $('#settings')
+    ];
+    
+    let container = containers.find(c => c.length > 0);
+    
+    if (container) {
         initializeExtensionUI();
+    } else {
+        // If no container found, try to append to body
+        $('body').append(`
+            <div id="db_memory_fallback_container" style="padding: 20px;">
+                ${createUltraMinimalUI()}
+            </div>
+        `);
+        
+        // Bind events for fallback UI
+        $('#db_memory_toggle_btn').on('click', toggleExpanded);
+        $('#db_memory_connect_btn').on('click', handleConnect);
+        $('#db_memory_disconnect_btn').on('click', handleDisconnect);
+        
+        // Listen for setting changes
+        $('#db_memory_auto_sync').on('change', function() {
+            dbMemoryState.settings.autoSync = $(this).prop('checked');
+            saveSettings();
+        });
+        
+        $('#db_memory_auto_extraction').on('change', function() {
+            dbMemoryState.settings.enableAutoExtraction = $(this).prop('checked');
+            saveSettings();
+        });
+        
+        $('#db_memory_context_building').on('change', function() {
+            dbMemoryState.settings.enableContextBuilding = $(this).prop('checked');
+            saveSettings();
+        });
+        
+        $('#db_memory_memory_search').on('change', function() {
+            dbMemoryState.settings.enableMemorySearch = $(this).prop('checked');
+            saveSettings();
+        });
+        
+        $('#db_memory_real_time_sync').on('change', function() {
+            dbMemoryState.settings.enableRealTimeSync = $(this).prop('checked');
+            saveSettings();
+        });
+        
+        $('#db_memory_debug_mode').on('change', function() {
+            dbMemoryState.settings.debugMode = $(this).prop('checked');
+            saveSettings();
+        });
+        
+        $('#db_memory_messages_per_sync').on('change', function() {
+            dbMemoryState.settings.messagesPerSync = parseInt($(this).val());
+            saveSettings();
+        });
+        
+        $('#db_memory_memories_per_context').on('change', function() {
+            dbMemoryState.settings.memoriesPerContext = parseInt($(this).val());
+            saveSettings();
+        });
+        
+        $('#db_memory_similarity_threshold').on('input', function() {
+            const value = parseFloat($(this).val());
+            dbMemoryState.settings.similarityThreshold = value;
+            $('#db_memory_similarity_value').text(value);
+            saveSettings();
+        });
+        
+        // Load saved settings
+        loadSettings();
+        populateSettings();
+        
+        // Try auto-connect on page load
+        if (dbMemoryState.backendUrl && dbMemoryState.username && dbMemoryState.password) {
+            setTimeout(() => handleConnect(), 1000);
+        }
     }
     
     // Hook into message flow
     hookIntoMessageFlow();
-    
-    // Auto-connect if we have credentials
-    loadSettings();
-    if (dbMemoryState.backendUrl && dbMemoryState.username && dbMemoryState.password) {
-        if (dbMemoryState.jwtToken && dbMemoryState.tokenExpiry) {
-            const now = new Date();
-            const expiry = new Date(dbMemoryState.tokenExpiry);
-            if (now < expiry) {
-                dbMemoryState.connected = true;
-                updateConnectionStatus();
-            }
-        }
-    }
     
     console.log('[DB Memory Ultra] Initialized');
 });
