@@ -533,7 +533,50 @@ function handleResetSettings() {
 
 // Hook into SillyTavern message flow
 function hookIntoMessageFlow() {
-    // Listen for new messages being added to chat
+    // Subscribe to eventSource for real-time message events
+    if (window.eventSource && window.event_types) {
+        const NEW_MESSAGE = window.event_types.NEW_MESSAGE;
+        const CHAT_CHANGED = window.event_types.CHAT_CHANGED;
+        
+        window.eventSource.addEventListener(NEW_MESSAGE, async (msg) => {
+            if (!dbMemoryState.connected || !dbMemoryState.settings.autoSync) return;
+            
+            try {
+                const content = msg.message?.mes || msg.message || msg.mes || '';
+                if (!content) return;
+                
+                const context = getContext();
+                const messageId = msg.message?.id || msg.id;
+                
+                const role = (msg.author === 'user' || msg.is_user) ? 'user' : 'assistant';
+                
+                // Save message to backend
+                await saveMessage(content, role);
+                
+                // Process for memory extraction if enabled
+                if (dbMemoryState.settings.enableAutoExtraction) {
+                    await processMessage(content, role);
+                }
+                
+                if (dbMemoryState.settings.debugMode) {
+                    console.log('[DB Memory] Auto-saved message:', { content: content.substring(0, 50), role, messageId });
+                }
+            } catch (error) {
+                if (dbMemoryState.settings.debugMode) {
+                    console.error('[DB Memory] Error in event handler:', error);
+                }
+            }
+        });
+        
+        window.eventSource.addEventListener(CHAT_CHANGED, () => {
+            dbMemoryState.lastProcessedMessageId = null;
+            if (dbMemoryState.settings.debugMode) {
+                console.log('[DB Memory] Chat changed, resetting last processed ID');
+            }
+        });
+    }
+    
+    // Listen for new messages being added to chat (fallback)
     $(document).on('click', '#send_form button, #Regenerate, #Continue', function() {
         if (!dbMemoryState.connected || !dbMemoryState.settings.autoSync) return;
         

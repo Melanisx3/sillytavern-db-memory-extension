@@ -1,12 +1,12 @@
 {
-    "display_name": "DB Memory Extension",
+    "display_name": "DB Memory Extension (Mobile)",
     "loading_order": 100,
     "requires": [],
     "optional": [],
-    "js": "integrated-index.js",
+    "js": "ultra-minimal-index.js",
     "css": "assets/styles/style.css",
     "author": "Melanisx3",
-    "version": "2.0.0",
+    "version": "2.1.0-mobile",
     "homePage": "https://github.com/Melanisx3/sillytavern-db-memory-extension",
     "auto_update": false
 }

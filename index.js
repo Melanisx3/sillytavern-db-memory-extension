@@ -532,6 +532,35 @@ async function init() {
     }
     
     updateConnectionStatus();
+    
+    // Subscribe to chat events for auto-sync
+    if (eventSource) {
+        eventSource.addEventListener(event_types.NEW_MESSAGE, async (msg) => {
+            if (state.settings.autoSync && state.connected) {
+                try {
+                    const context = getContext();
+                    const messageId = msg.message?.id || msg.id;
+                    if (!state.processedMessages.has(messageId)) {
+                        state.processedMessages.add(messageId);
+                        await MemoriesAPI.process(msg.message?.mes || msg.message || '', {
+                            role: msg.author === 'user' ? 'user' : 'assistant',
+                            chatId: context.chatId,
+                            characterId: context.characterId,
+                            sourceMessageId: messageId
+                        });
+                    }
+                } catch (e) {
+                    if (state.settings.debugMode) console.error('[DB Memory] Auto-sync failed:', e);
+                }
+            }
+        });
+        
+        eventSource.addEventListener(event_types.CHAT_CHANGED, () => {
+            state.processedMessages.clear();
+            state.lastSyncedMessageId = null;
+        });
+    }
+    
     console.log('[DB Memory] Initialization complete');
 }
 
