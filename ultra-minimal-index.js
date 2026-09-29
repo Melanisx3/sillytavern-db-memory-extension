@@ -1,6 +1,6 @@
 /**
  * DB Memory Extension - Ultra minimal version
- * Mobile-friendly: collapsible menu with expanded settings
+ * Mobile-friendly: collapsible menu with expanded settings matching SillyTavern UI
  */
 
 // Global state for the extension
@@ -33,11 +33,16 @@ const dbMemoryState = {
 
 // Load saved settings
 function loadSettings() {
-    const saved = localStorage.getItem('db_memory_settings');
+    const saved = extension_settings.db_memory_minimal;
     if (saved) {
         try {
-            const parsed = JSON.parse(saved);
-            Object.assign(dbMemoryState, parsed);
+            if (saved.backendUrl) dbMemoryState.backendUrl = saved.backendUrl;
+            if (saved.username) dbMemoryState.username = saved.username;
+            if (saved.jwtToken) dbMemoryState.jwtToken = saved.jwtToken;
+            if (saved.tokenExpiry) dbMemoryState.tokenExpiry = saved.tokenExpiry;
+            if (saved.settings) {
+                Object.assign(dbMemoryState.settings, saved.settings);
+            }
         } catch (e) {
             console.error('[DB Memory] Failed to load settings:', e);
         }
@@ -46,7 +51,14 @@ function loadSettings() {
 
 // Save settings
 function saveSettings() {
-    localStorage.setItem('db_memory_settings', JSON.stringify(dbMemoryState));
+    extension_settings.db_memory_minimal = {
+        backendUrl: dbMemoryState.backendUrl,
+        username: dbMemoryState.username,
+        jwtToken: dbMemoryState.jwtToken,
+        tokenExpiry: dbMemoryState.tokenExpiry,
+        settings: { ...dbMemoryState.settings }
+    };
+    saveSettingsDebounced();
 }
 
 // HTTP Client with JWT
@@ -186,9 +198,11 @@ function updateConnectionStatus() {
     if (!statusEl.length) return;
     
     if (dbMemoryState.connected) {
-        statusEl.text('Connected').css({ background: '#d4edda', color: '#155724' });
+        statusEl.removeClass('status-error status-info').addClass('status-ok')
+            .html('<i class="fa-solid fa-circle-check"></i> Connected').show();
     } else {
-        statusEl.text('Disconnected').css({ background: '#f8d7da', color: '#721c24' });
+        statusEl.removeClass('status-ok status-info').addClass('status-error')
+            .html('<i class="fa-solid fa-circle-xmark"></i> Disconnected').show();
     }
 }
 
@@ -197,14 +211,23 @@ function showStatus(message, type = 'info') {
     const statusEl = $('#db_memory_status_msg');
     if (!statusEl.length) return;
     
-    const colors = {
-        success: { bg: '#d4edda', color: '#155724' },
-        error: { bg: '#f8d7da', color: '#721c24' },
-        info: { bg: '#d1ecf1', color: '#0c5460' }
+    statusEl.removeClass('status-ok status-error status-info');
+    
+    const classes = {
+        success: 'status-ok',
+        error: 'status-error',
+        info: 'status-info'
     };
     
-    const color = colors[type] || colors.info;
-    statusEl.text(message).css(color).show();
+    const icons = {
+        success: '<i class="fa-solid fa-circle-check"></i>',
+        error: '<i class="fa-solid fa-triangle-exclamation"></i>',
+        info: '<i class="fa-solid fa-circle-info"></i>'
+    };
+    
+    statusEl.addClass(classes[type] || classes.info)
+        .html(`${icons[type] || icons.info} ${message}`)
+        .show();
     
     setTimeout(() => statusEl.fadeOut(), 3000);
 }
@@ -218,83 +241,105 @@ function toggleExpanded() {
 // Initialize extension UI
 function initializeExtensionUI() {
     const uiHTML = `
-        <div id="db_memory_extension_panel" style="padding: 15px;">
-            <h3 style="margin-top: 0; display: flex; align-items: center; justify-content: space-between;">
-                DB Memory
-                <button id="db_memory_toggle_btn" style="background: none; border: none; color: inherit; font-size: 18px; cursor: pointer;">
-                    ${dbMemoryState.isExpanded ? '▲' : '▼'}
-                </button>
-            </h3>
-            
-            <div id="db_memory_content" style="${dbMemoryState.isExpanded ? '' : 'display: none;'}">
-                <div style="margin-bottom: 15px;">
-                    <input type="text" id="db_memory_backend_url" placeholder="Backend URL" style="width: 100%; padding: 8px; margin-bottom: 5px;" value="${dbMemoryState.backendUrl}">
-                    <input type="text" id="db_memory_username" placeholder="Username" style="width: 100%; padding: 8px; margin-bottom: 5px;" value="${dbMemoryState.username}">
-                    <input type="password" id="db_memory_password" placeholder="Password" style="width: 100%; padding: 8px; margin-bottom: 5px;">
+        <div id="db_memory_extension_panel" class="extension-panel">
+            <div class="inline-drawer-content">
+                <div class="list-group-item flex-container flexGap5">
+                    <div class="fa-solid fa-chevron-down extension-toggle" id="db_memory_toggle_btn" style="cursor: pointer;"></div>
+                    <div class="flex-container flexFlowColumn flexGap0">
+                        <div class="extension-settings-title flex-container flexAlignCenter gap5">
+                            <i class="fa-solid fa-brain"></i>
+                            <span>DB Memory</span>
+                        </div>
+                        <small class="text-muted">Vector memory & context building</small>
+                    </div>
+                </div>
+                
+                <div id="db_memory_content" class="settings-content" style="${dbMemoryState.isExpanded ? '' : 'display: none;'}">
+                    <div class="list-group-item">
+                        <label for="db_memory_backend_url" class="form-label">Backend URL</label>
+                        <div class="flex-container flexGap5">
+                            <input type="text" id="db_memory_backend_url" class="text_pole" placeholder="http://192.168.1.70:3000" value="${dbMemoryState.backendUrl}">
+                        </div>
+                        
+                        <label for="db_memory_username" class="form-label">Username</label>
+                        <input type="text" id="db_memory_username" class="text_pole" placeholder="Username" value="${dbMemoryState.username}">
+                        
+                        <label for="db_memory_password" class="form-label">Password</label>
+                        <input type="password" id="db_memory_password" class="text_pole" placeholder="Password">
+                        
+                        <div class="flex-container flexGap5 margin_top_10">
+                            <button id="db_memory_connect_btn" class="menu_button menu_button_icon">
+                                <i class="fa-solid fa-plug"></i> Connect
+                            </button>
+                            <button id="db_memory_disconnect_btn" class="menu_button menu_button_icon">
+                                <i class="fa-solid fa-plug-circle-xmark"></i> Disconnect
+                            </button>
+                        </div>
+                        
+                        <div id="db_memory_status" class="status-block" style="display: none;"></div>
+                        <div id="db_memory_status_msg" class="status-block" style="display: none;"></div>
+                    </div>
                     
-                    <button id="db_memory_connect_btn" style="padding: 8px 15px; margin-right: 10px; background: #007bff; color: white; border: none; border-radius: 4px;">Connect</button>
-                    <button id="db_memory_disconnect_btn" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 4px;">Disconnect</button>
-                </div>
-                
-                <div id="db_memory_status" style="padding: 8px; margin-bottom: 10px; border-radius: 4px; font-weight: bold;">Disconnected</div>
-                <div id="db_memory_status_msg" style="padding: 8px; border-radius: 4px; display: none;"></div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label>
-                        <input type="checkbox" id="db_memory_auto_sync" ${dbMemoryState.settings.autoSync ? 'checked' : ''}> 
-                        Auto-sync messages
-                    </label>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label>
-                        <input type="checkbox" id="db_memory_auto_extraction" ${dbMemoryState.settings.enableAutoExtraction ? 'checked' : ''}> 
-                        Auto-extract memories
-                    </label>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label>
-                        <input type="checkbox" id="db_memory_context_building" ${dbMemoryState.settings.enableContextBuilding ? 'checked' : ''}> 
-                        Enable context building
-                    </label>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label>
-                        <input type="checkbox" id="db_memory_memory_search" ${dbMemoryState.settings.enableMemorySearch ? 'checked' : ''}> 
-                        Enable memory search
-                    </label>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label>
-                        <input type="checkbox" id="db_memory_real_time_sync" ${dbMemoryState.settings.enableRealTimeSync ? 'checked' : ''}> 
-                        Real-time sync
-                    </label>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label>
-                        <input type="checkbox" id="db_memory_debug_mode" ${dbMemoryState.settings.debugMode ? 'checked' : ''}> 
-                        Debug mode
-                    </label>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label>Messages per sync:</label>
-                    <input type="number" id="db_memory_messages_per_sync" min="1" max="100" value="${dbMemoryState.settings.messagesPerSync}" style="width: 100%; padding: 8px; margin-bottom: 5px;">
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label>Memories per context:</label>
-                    <input type="number" id="db_memory_memories_per_context" min="1" max="50" value="${dbMemoryState.settings.memoriesPerContext}" style="width: 100%; padding: 8px; margin-bottom: 5px;">
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label>Similarity threshold:</label>
-                    <input type="range" id="db_memory_similarity_threshold" min="0" max="1" step="0.1" value="${dbMemoryState.settings.similarityThreshold}" style="width: 100%;">
-                    <span id="db_memory_similarity_value">${dbMemoryState.settings.similarityThreshold}</span>
+                    <div class="list-group-item">
+                        <h5 class="margin_bottom_10"><i class="fa-solid fa-gear"></i> Settings</h5>
+                        
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" id="db_memory_auto_sync" ${dbMemoryState.settings.autoSync ? 'checked' : ''}> 
+                                Auto-sync messages
+                            </label>
+                        </div>
+                        
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" id="db_memory_auto_extraction" ${dbMemoryState.settings.enableAutoExtraction ? 'checked' : ''}> 
+                                Auto-extract memories
+                            </label>
+                        </div>
+                        
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" id="db_memory_context_building" ${dbMemoryState.settings.enableContextBuilding ? 'checked' : ''}> 
+                                Enable context building
+                            </label>
+                        </div>
+                        
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" id="db_memory_memory_search" ${dbMemoryState.settings.enableMemorySearch ? 'checked' : ''}> 
+                                Enable memory search
+                            </label>
+                        </div>
+                        
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" id="db_memory_real_time_sync" ${dbMemoryState.settings.enableRealTimeSync ? 'checked' : ''}> 
+                                Real-time sync
+                            </label>
+                        </div>
+                        
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" id="db_memory_debug_mode" ${dbMemoryState.settings.debugMode ? 'checked' : ''}> 
+                                Debug mode
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <h5 class="margin_bottom_10"><i class="fa-solid fa-sliders"></i> Advanced</h5>
+                        
+                        <div class="flex-container flexFlowColumn flexGap5">
+                            <label for="db_memory_messages_per_sync">Messages per sync</label>
+                            <input type="number" id="db_memory_messages_per_sync" class="text_pole" min="1" max="100" value="${dbMemoryState.settings.messagesPerSync}">
+                            
+                            <label for="db_memory_memories_per_context">Memories per context</label>
+                            <input type="number" id="db_memory_memories_per_context" class="text_pole" min="1" max="50" value="${dbMemoryState.settings.memoriesPerContext}">
+                            
+                            <label for="db_memory_similarity_threshold">Similarity threshold: <span id="db_memory_similarity_value">${dbMemoryState.settings.similarityThreshold}</span></label>
+                            <input type="range" id="db_memory_similarity_threshold" min="0" max="1" step="0.1" value="${dbMemoryState.settings.similarityThreshold}" class="slider">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -304,7 +349,6 @@ function initializeExtensionUI() {
     
     // Load saved settings
     loadSettings();
-    populateSettings();
     
     // Bind events
     $('#db_memory_toggle_btn').on('click', toggleExpanded);
@@ -371,11 +415,11 @@ function updateUI() {
     const toggleBtn = $('#db_memory_toggle_btn');
     
     if (dbMemoryState.isExpanded) {
-        content.show();
-        toggleBtn.text('▲');
+        content.slideDown(200);
+        toggleBtn.removeClass('fa-database fa-chevron-down').addClass('fa-database fa-chevron-up');
     } else {
-        content.hide();
-        toggleBtn.text('▼');
+        content.slideUp(200);
+        toggleBtn.removeClass('fa-database fa-chevron-up').addClass('fa-database fa-chevron-down');
     }
 }
 

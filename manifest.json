@@ -6,7 +6,7 @@
     "js": "ultra-minimal-index.js",
     "css": "assets/styles/style.css",
     "author": "Melanisx3",
-    "version": "2.3.0-mobile",
+    "version": "2.4.0-mobile",
     "homePage": "https://github.com/Melanisx3/sillytavern-db-memory-extension",
     "auto_update": false
 }
