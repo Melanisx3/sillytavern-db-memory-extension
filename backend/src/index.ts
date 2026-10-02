@@ -1,32 +1,25 @@
-import { Pool } from "pg";
-
-const pool = new Pool({
-  host: process.env.POSTGRES_HOST ?? "localhost",
-  port: Number(process.env.POSTGRES_PORT ?? 5432),
-  user: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
-  database: process.env.POSTGRES_DB,
-});
+import { createApp } from "./app.js";
+import { config } from "./config.js";
+import { pool, verifyDatabase } from "./db.js";
 
 async function main(): Promise<void> {
-  const client = await pool.connect();
+  await verifyDatabase();
 
-  try {
-    const extensionResult = await client.query<{ extname: string; extversion: string }>(
-      "SELECT extname, extversion FROM pg_extension WHERE extname = 'vector'"
-    );
+  const app = createApp();
+  const server = app.listen(config.port, () => {
+    console.log(`Backend listening on port ${config.port} (${config.nodeEnv})`);
+  });
 
-    const distanceResult = await client.query<{ distance: number }>(
-      "SELECT '[1,2,3]'::vector <-> '[1,2,4]'::vector AS distance"
-    );
+  const shutdown = async (signal: string) => {
+    console.log(`Received ${signal}, shutting down...`);
+    server.close(async () => {
+      await pool.end();
+      process.exit(0);
+    });
+  };
 
-    console.log("Backend placeholder started.");
-    console.log("pgvector extension:", extensionResult.rows[0] ?? "not found");
-    console.log("vector distance test:", distanceResult.rows[0]?.distance);
-  } finally {
-    client.release();
-    await pool.end();
-  }
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
 }
 
 main().catch((error: unknown) => {
