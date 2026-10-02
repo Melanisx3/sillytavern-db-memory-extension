@@ -367,7 +367,6 @@ function renderContextList(entries) {
 
 // Event Handlers
 function bindEventHandlers() {
-    // Connection
     $('#db_memory_connect_btn').on('click', async function () {
         const url = $('#db_memory_backend_url').val().trim();
         const user = $('#db_memory_username').val().trim();
@@ -388,6 +387,22 @@ function bindEventHandlers() {
             showMessage('Connected!', 'success');
         } catch (e) {
             showMessage(e.message, 'error');
+        }
+    });
+
+    $('#db_memory_test_connection_btn').on('click', async function () {
+        if (!state.connected) {
+            showMessage('Not connected. Please connect first.', 'error');
+            return;
+        }
+
+        showMessage('Testing connection...', 'info');
+
+        try {
+            await testConnection();
+            showMessage('Connection is healthy!', 'success');
+        } catch (e) {
+            showMessage(`Test failed: ${e.message}`, 'error');
         }
     });
 
