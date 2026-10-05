@@ -5,7 +5,7 @@ Local Docker infrastructure with **PostgreSQL + pgvector** and a minimal TypeScr
 ## Stack
 
 | Component   | Technology              |
-|-------------|-------------------------|
+|-------------|------------------------|
 | Database    | PostgreSQL 16 + pgvector |
 | Backend     | Node.js 20 + TypeScript  |
 | Orchestration | Docker Compose        |

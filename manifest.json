@@ -1,0 +1,12 @@
+{
+    "display_name": "DB Memory Extension",
+    "loading_order": 100,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "assets/styles/style.css",
+    "author": "Melanisx3",
+    "version": "2.5.0-unified",
+    "homePage": "https://github.com/Melanisx3/sillytavern-db-memory-extension",
+    "auto_update": false
+}
