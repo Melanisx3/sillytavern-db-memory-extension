@@ -1,0 +1,255 @@
+/*
+ * DB Memory — single stylesheet (desktop + mobile).
+ * Everything is scoped under .dbm-root / .dbm-* so it never touches other extensions.
+ * Native ST classes (.menu_button, .text_pole, .inline-drawer*) are reused and NOT overridden,
+ * so the tile follows whatever theme the user has selected.
+ */
+
+/* ---------- Drawer header (the tile) ---------- */
+.dbm-root .inline-drawer-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dbm-root .dbm-title {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.dbm-root .dbm-title b {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dbm-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.8em;
+    line-height: 1.6;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.4));
+    background: var(--black30a, rgba(0, 0, 0, 0.3));
+    white-space: nowrap;
+}
+
+.dbm-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e5534b;
+    flex: 0 0 auto;
+}
+
+.dbm-pill.ok .dbm-dot { background: #46c35f; box-shadow: 0 0 6px #46c35f; }
+.dbm-pill.err .dbm-dot { background: #e5534b; }
+
+/* ---------- Content layout ---------- */
+.dbm-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 6px;
+}
+
+/* ---------- Tabs ---------- */
+.dbm-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.dbm-tab {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    opacity: 0.65;
+    margin: 0;
+}
+
+.dbm-tab.active {
+    opacity: 1;
+    border-color: var(--SmartThemeQuoteColor, #7aa2f7);
+    box-shadow: inset 0 -2px 0 var(--SmartThemeQuoteColor, #7aa2f7);
+}
+
+.dbm-panel { display: none; }
+.dbm-panel.active { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---------- Form pieces ---------- */
+.dbm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dbm-field > label,
+.dbm-label {
+    font-size: 0.85em;
+    opacity: 0.85;
+}
+
+.dbm-field .text_pole,
+.dbm-field select,
+.dbm-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.dbm-field textarea { min-height: 70px; resize: vertical; }
+
+.dbm-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.dbm-row > .menu_button { margin: 0; flex: 0 1 auto; }
+.dbm-row > .flex1 { flex: 1 1 140px; min-width: 0; }
+
+.dbm-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.dbm-check input { margin: 0; flex: 0 0 auto; }
+
+.dbm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.dbm-hint { font-size: 0.8em; opacity: 0.6; line-height: 1.4; }
+
+.dbm-msg {
+    display: none;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.4));
+    word-break: break-word;
+}
+
+.dbm-msg.show { display: block; }
+.dbm-msg.ok { border-color: #46c35f; color: #46c35f; }
+.dbm-msg.err { border-color: #e5534b; color: #e5534b; }
+.dbm-msg.info { border-color: var(--SmartThemeQuoteColor, #7aa2f7); }
+
+.dbm-range { display: flex; align-items: center; gap: 10px; }
+.dbm-range input[type="range"] { flex: 1 1 auto; margin: 0; min-width: 0; }
+.dbm-range output { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- Memory / context lists ---------- */
+.dbm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 2px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dbm-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.4));
+    background: var(--black30a, rgba(0, 0, 0, 0.25));
+}
+
+.dbm-item-head,
+.dbm-item-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.78em;
+    opacity: 0.8;
+}
+
+.dbm-item-text {
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.dbm-badge {
+    padding: 1px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--SmartThemeQuoteColor, #7aa2f7);
+    color: var(--SmartThemeQuoteColor, #7aa2f7);
+    white-space: nowrap;
+}
+
+.dbm-del { margin: 0; padding: 2px 10px; color: #e5534b; }
+
+.dbm-empty {
+    padding: 14px 8px;
+    text-align: center;
+    opacity: 0.6;
+    font-size: 0.9em;
+}
+
+.dbm-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.dbm-pager .menu_button { margin: 0; }
+
+.dbm-pre {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: var(--black30a, rgba(0, 0, 0, 0.3));
+    border: 1px dashed var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.4));
+}
+
+.dbm-sep {
+    border: 0;
+    border-top: 1px solid var(--SmartThemeBorderColor, rgba(128, 128, 128, 0.3));
+    margin: 4px 0;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 600px) {
+    .dbm-grid { grid-template-columns: 1fr; }
+
+    /* 16px prevents iOS from zooming into inputs */
+    .dbm-field .text_pole,
+    .dbm-field select,
+    .dbm-field textarea { font-size: 16px; }
+
+    .dbm-row > .menu_button { flex: 1 1 calc(50% - 6px); justify-content: center; }
+    .dbm-tab { flex: 0 0 auto; padding-left: 12px; padding-right: 12px; }
+    .dbm-tab .dbm-tab-label { display: none; }
+    .dbm-tab.active .dbm-tab-label { display: inline; }
+    .dbm-list { max-height: 60vh; }
+    .dbm-pill .dbm-pill-text { display: none; }
+}
