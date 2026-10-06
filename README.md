@@ -7,7 +7,6 @@ Local Docker infrastructure with **PostgreSQL + pgvector** and a minimal TypeScr
 ```
 project/
 ├── backend/              # TypeScript backend placeholder
-├── extension/            # SillyTavern extension (not implemented yet)
 ├── database/
 │   ├── init/             # Runs on first PostgreSQL start
 │   ├── migrations/       # SQL migrations (manual apply)
