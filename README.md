@@ -1,4 +1,4 @@
-# SillyTavern DB Memory Extension
+# SillyTavern DB Memory Extension👾
 
 Долговременная память для SillyTavern: сообщения чата разбираются на «воспоминания», получают эмбеддинги и
 сохраняются в PostgreSQL с pgvector. Релевантные воспоминания находятся семантическим поиском.
@@ -14,7 +14,7 @@ PostgreSQL + pgvector
 ```
 
 
-## Требования
+## Требования✅
 
 - Docker и Docker Compose v2 (рекомендуется), либо PostgreSQL 16 с расширением pgvector и Node.js ≥ 20
 - Node.js ≥ 20 (для генерации `.env` и локальной разработки)
@@ -62,7 +62,7 @@ Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/register `
 
 Логин 3–64 символа, пароль 6–128 символов.
 
-## Установка расширения в SillyTavern
+## Установка расширения в SillyTavern🕸️
 
 1. Откройте SillyTavern → **Extensions** (значок с кубиками) → **Install extension**.
 2. Вставьте `https://github.com/Melanisx3/sillytavern-db-memory-extension` и нажмите **Install**.
@@ -71,7 +71,7 @@ Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/register `
 Вручную: склонируйте репозиторий в `data/<ваш-пользователь>/extensions/sillytavern-db-memory-extension`
 (имя папки должно совпадать — шаблон загружается по пути `third-party/sillytavern-db-memory-extension`).
 
-## Использование
+## Использование🫴
 
 ### Что вписать в поля
 
@@ -96,12 +96,12 @@ Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/register `
 
 Не забудьте **Save Settings**.
 
-### Разделы
+### Разделы📝
 
 - **Memory Browser** — список воспоминаний, пагинация, удаление.
 - **Context Preview** — какие воспоминания бэкенд подберёт к последнему сообщению текущего чата.
 
-### Как работает память
+### Как работает память📖
 
 Сообщение → предобработка → разбиение на фразы → классификация (`fact`, `preference`, `event`, `relationship`,
 `character_state`, `world_information`, `important_event`) → оценка важности и уверенности → эмбеддинг →
@@ -126,30 +126,20 @@ Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/register `
 | `EMBEDDING_DIMENSIONS` | 384 | Должна совпадать с `vector(384)` (проверяется при старте) |
 
 
-## Разработка и проверка
-
-```bash
-cd backend
-npm ci
-npm test            # unit-тесты (если glob не раскрывается в Windows: npx tsx --test src/memory/memory-engine.test.ts)
-npm run build       # production-сборка (tsc)
-BACKEND_URL=http://localhost:3000 npm run verify   # сквозная проверка API при запущенном стеке
-```
-
-## Безопасность и ограничения
+## Безопасность и ограничения📌
 
 - Пароль и JWT хранятся в настройках SillyTavern (`settings.json`) — не используйте пароль, который применяете где-либо ещё.
 - Регистрация открыта для всех, кто достучится до бэкенда: не публикуйте порт в интернет без HTTPS и фильтрации.
 - Параллельная обработка одинаковых сообщений теоретически может создать дубль (проверка дубликатов не атомарна).
 - Пока бэкенд недоступен, сообщения не ставятся в очередь повторной отправки.
 
-## Вдохновение
+## Вдохновение🧸
 
 - [SillyTavern](https://github.com/SillyTavern/SillyTavern) — платформа и API расширений
 - [pgvector](https://github.com/pgvector/pgvector) — векторный поиск в PostgreSQL
 - [horae](https://github.com/SenriYuki/SillyTavern-Horae) – вдохновение системы памяти
 - [fetish-manager](https://github.com/delidgi/fetish-manager) — визуальный ориентир интерфейса
 
-## Лицензия и автор
+## Лицензия и автор🎨
 
-MIT — см. файл [LICENSE](LICENSE). Автор: **Melanisx3**.
+MIT⚖️ — см. файл [LICENSE](LICENSE). Автор: **Melanisx3**.
